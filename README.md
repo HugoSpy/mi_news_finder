@@ -1,21 +1,44 @@
 # Market Intelligence — Pipeline B2B IT
 
 Outil de scraping et classification automatique de news IT enterprise.  
-Sélectionne les **3 meilleures news SI** et les **3 meilleures news GL** sur une période donnée, avec classification via l'API Claude (Anthropic).
+Sélectionne les **3 meilleures news SI** et les **3 meilleures news GL** sur une période donnée.
+
+---
+
+## Deux modes de fonctionnement
+
+### 🤖 Mode LLM (recommandé)
+
+Utilise l'API Claude pour classifier, scorer et justifier chaque article.  
+**Coût : ~20-30 centimes max par exécution.** Résultats de qualité, justifications détaillées.
+
+```bash
+python main.py --start-date 2026-03-01 --end-date 2026-03-19
+```
+
+### 🆓 Mode gratuit (`--no-llm`)
+
+Pas d'API, classification par mots-clés uniquement.  
+**Gratuit, mais moins précis** — sélectionne par comptage de mots-clés, pas par pertinence réelle.  
+Utile pour tester que le scraping fonctionne, pas pour une présentation.
+
+```bash
+python main.py --start-date 2026-03-01 --end-date 2026-03-19 --no-llm
+```
 
 ---
 
 ## Structure du projet
 
 ```
-market-intel/
-├── src/
-│   ├── main.py          # CLI principal — point d'entrée
-│   ├── scraper.py       # Récupération RSS + contenu full-text
-│   ├── processor.py     # Pré-filtrage B2C + scoring mots-clés
-│   ├── llm_client.py    # Appel API Claude + fallback local
-│   └── ranking.py       # Tri, sélection top K, affichage
+mi_news_finder/
+├── main.py          # CLI principal — point d'entrée
+├── scraper.py       # Récupération RSS + contenu full-text
+├── processor.py     # Pré-filtrage B2C + scoring mots-clés
+├── llm_client.py    # Appel API Claude + fallback local
+├── ranking.py       # Tri, sélection top K, affichage
 ├── requirements.txt
+├── .env.example
 └── README.md
 ```
 
@@ -24,15 +47,10 @@ market-intel/
 ## Installation
 
 ```bash
-# Cloner ou dézipper le projet
-cd market-intel
-
-# Créer un environnement virtuel (recommandé)
+cd mi_news_finder
 python -m venv venv
 source venv/bin/activate        # Linux/Mac
 # ou : venv\Scripts\activate    # Windows
-
-# Installer les dépendances
 pip install -r requirements.txt
 ```
 
@@ -40,135 +58,92 @@ pip install -r requirements.txt
 
 ## Configuration de la clé API
 
+Nécessaire uniquement pour le mode LLM. Clé disponible sur https://console.anthropic.com/
+
 ```bash
-# Linux / Mac
+# Linux / Mac / WSL
 export ANTHROPIC_API_KEY="sk-ant-xxxxxxxxxxxx"
 
 # Windows PowerShell
 $env:ANTHROPIC_API_KEY = "sk-ant-xxxxxxxxxxxx"
 
-# Ou directement dans la commande :
-python src/main.py --api-key sk-ant-xxxx ...
+# Ou directement dans la commande
+python main.py --api-key sk-ant-xxxx ...
 ```
-
-La clé API Anthropic est disponible sur : https://console.anthropic.com/
 
 ---
 
-## Utilisation
-
-### Commande de base
+## Toutes les options CLI
 
 ```bash
-python src/main.py --start-date 2025-03-01 --end-date 2025-03-19
+python main.py --start-date YYYY-MM-DD --end-date YYYY-MM-DD [options]
+
+Options :
+  --top-k N        Nombre d'articles par catégorie (défaut : 3)
+  --no-llm         Mode gratuit, sans API
+  --no-fetch       Ne pas charger le contenu des pages (plus rapide)
+  --output FILE    Sauvegarder les résultats en JSON
+  --api-key KEY    Clé API Anthropic (sinon lu depuis ANTHROPIC_API_KEY)
+  --model MODEL    Modèle Claude (défaut : claude-haiku-4-5-20251001)
 ```
 
-### Avec plus d'options
+---
 
-```bash
-# Top 5 au lieu de top 3
-python src/main.py --start-date 2025-03-01 --end-date 2025-03-19 --top-k 5
+## Sources configurées
 
-# Sauvegarder les résultats en JSON
-python src/main.py --start-date 2025-03-01 --end-date 2025-03-19 --output output/results.json
-
-# Mode sans LLM (règles locales uniquement, gratuit)
-python src/main.py --start-date 2025-03-01 --end-date 2025-03-19 --no-llm
-
-# Mode rapide (pas de chargement des pages, RSS seulement)
-python src/main.py --start-date 2025-03-01 --end-date 2025-03-19 --no-fetch
-```
+| Source            | Catégorie                 |
+| ----------------- | ------------------------- |
+| 01net             | SI — Presse IT FR         |
+| Silicon.fr        | SI — Presse IT FR         |
+| Le Monde Techno   | SI — Presse IT FR         |
+| AWS News          | SI — Vendor cloud         |
+| Google Cloud Blog | SI — Vendor cloud         |
+| SAP Newsroom      | SI — Vendor ERP           |
+| Microsoft News    | SI — Vendor               |
+| InfoQ             | GL — Engineering          |
+| The New Stack     | GL — Cloud-native         |
+| GitHub Blog       | GL — DevOps               |
+| GitLab Blog       | GL — DevSecOps            |
+| DevOps.com        | GL — Pratiques            |
+| The Register      | GL/SI — Actualité tech EN |
+| Developpez.com    | GL — Dev FR               |
+| Changelog         | GL — Releases open source |
 
 ---
 
 ## Pipeline de traitement
 
 ```
-RSS Sources → Scraping → Déduplication → Pré-filtrage (règles)
+RSS Sources → Scraping → Déduplication → Pré-filtrage mots-clés (gratuit)
                                                     ↓
                               B2C détecté → REJET immédiat (sans LLM)
                                                     ↓
-                              Candidats SI/GL → Appel Claude API
+                              Candidats → Appel Claude API (mode LLM)
+                                       ou score mots-clés (mode --no-llm)
                                                     ↓
-                              Classification + Score + Justification
+                              Classification SI/GL + Score + Justification
                                                     ↓
                               Ranking → Top 3 SI + Top 3 GL → Affichage
 ```
-
-**Stratégie hybride :**  
-Les règles locales (mots-clés B2C, SI, GL) filtrent ~60-70% des articles avant tout appel LLM.  
-Le LLM ne traite que les articles candidats pertinents → coût API minimal.
-
----
-
-## Sources configurées
-
-| Source | Type |
-|---|---|
-| 01net | Actualité IT FR |
-| ZDNet FR | Actualité IT FR |
-| Silicon.fr | IT Enterprise FR |
-| Les Échos Tech | Business/Tech |
-| Le Monde Techno | Généraliste tech |
-| IBM Blog | Vendor |
-| SAP Blog | Vendor ERP |
-| AWS News | Cloud |
-| Google Cloud Blog | Cloud |
-| Microsoft Tech Community | Cloud/Enterprise |
-
-Pour ajouter une source : éditer `RSS_SOURCES` dans `src/scraper.py`.
 
 ---
 
 ## Définitions métier
 
-### SI — Systèmes d'Information
-Cloud, infrastructure IT, ERP, CRM, cybersécurité, data/BI, architecture SI, gouvernance IT, transformation numérique enterprise, migrations, hyperscalers en contexte enterprise.
+**SI — Systèmes d'Information** : cloud enterprise, infrastructure IT, ERP/CRM, cybersécurité, data/BI, architecture SI, gouvernance, transformation numérique, souveraineté numérique, conformité réglementaire (NIS2, DORA, AI Act).
 
-### GL — Génie Logiciel
-DevOps, CI/CD, testing, qualité logicielle, platform engineering, conteneurs/Kubernetes, observabilité, developer experience, sécurité applicative, industrialisation logicielle.
+**GL — Génie Logiciel** : DevOps, CI/CD, testing, qualité logicielle, platform engineering, conteneurs/Kubernetes, observabilité, developer experience, sécurité applicative, releases majeures de langages/outils enterprise.
 
-### REJECT
-Tout contenu B2C (smartphones, gadgets, consoles), people/rumeurs, hors IT enterprise.
+**REJECT** : B2C (smartphones, gadgets, consoles), tutos vendor, articles anniversaire sans annonce, people news.
 
 ---
 
 ## Estimation des coûts API
 
-Avec le modèle `claude-haiku-4-5` (recommandé) :
+Modèle utilisé : `claude-haiku-4-5-20251001`
 
-| Scénario | Articles scrapés | Candidats LLM | Coût estimé |
-|---|---|---|---|
-| 1 semaine | ~200 | ~40 | ~$0.005 |
-| 1 mois | ~800 | ~150 | ~$0.02 |
-| Test rapide | ~50 | ~10 | < $0.001 |
-
----
-
-## Exemple de sortie terminal
-
-```
-══════════════════════════════════════════════════════════════════════
-  📊  MARKET INTELLIGENCE — RÉSULTATS
-  Période : 01/03/2025 → 19/03/2025
-══════════════════════════════════════════════════════════════════════
-
-  🔵  TOP 3 — SYSTÈMES D'INFORMATION
-  ──────────────────────────────────────────────────────────────────
-
-  #1  [92/100]  SAP annonce une migration massive vers RISE with SAP pour 500 clients
-      📰  Source   : SAP Blog
-      📅  Date     : 15/03/2025
-      🔗  URL      : https://...
-      📝  Résumé   : SAP accélère la migration cloud de ses clients ERP via une offre packagée.
-      💡  Pourquoi : Impact direct sur les DSI de grands groupes utilisant SAP. Concerne la
-                     transformation SI de milliers d'entreprises françaises.
-
-  ...
-
-  🟢  TOP 3 — GÉNIE LOGICIEL
-  ──────────────────────────────────────────────────────────────────
-
-  #1  [88/100]  GitHub Actions introduit des runners ARM natifs pour CI/CD enterprise
-      ...
-```
+| Scénario                      | Articles scrapés | Candidats LLM | Coût estimé |
+| ----------------------------- | ---------------- | ------------- | ----------- |
+| 3 semaines (usage typique MI) | ~200             | ~120          | ~$0.25      |
+| 1 mois                        | ~300             | ~160          | ~$0.30      |
+| Test `--no-fetch` rapide      | ~200             | ~120          | ~$0.15      |
