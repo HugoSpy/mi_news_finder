@@ -1,4 +1,4 @@
-# Market Intelligence — Pipeline B2B IT
+# Market Intelligence  Pipeline B2B IT
 
 Outil de scraping et classification automatique de news IT enterprise.  
 Sélectionne les **3 meilleures news SI** et les **3 meilleures news GL** sur une période donnée.
@@ -19,8 +19,8 @@ python main.py --start-date 2026-03-01 --end-date 2026-03-19
 ### 🆓 Mode gratuit (`--no-llm`)
 
 Pas d'API, classification par mots-clés uniquement.  
-**Gratuit, mais moins précis** — sélectionne par comptage de mots-clés, pas par pertinence réelle.  
-Utile pour tester que le scraping fonctionne, pas pour une présentation.
+**Gratuit, mais moins précis**  sélectionne par comptage de mots-clés + pondération, pas par pertinence réelle.  
+Utile pour tester que le scraping fonctionne, pas pour une vraie présentation.
 
 ```bash
 python main.py --start-date 2026-03-01 --end-date 2026-03-19 --no-llm
@@ -32,7 +32,7 @@ python main.py --start-date 2026-03-01 --end-date 2026-03-19 --no-llm
 
 ```
 mi_news_finder/
-├── main.py          # CLI principal — point d'entrée
+├── main.py          # CLI principal  point d'entrée
 ├── scraper.py       # Récupération RSS + contenu full-text
 ├── processor.py     # Pré-filtrage B2C + scoring mots-clés
 ├── llm_client.py    # Appel API Claude + fallback local
@@ -93,21 +93,21 @@ Options :
 
 | Source            | Catégorie                 |
 | ----------------- | ------------------------- |
-| 01net             | SI — Presse IT FR         |
-| Silicon.fr        | SI — Presse IT FR         |
-| Le Monde Techno   | SI — Presse IT FR         |
-| AWS News          | SI — Vendor cloud         |
-| Google Cloud Blog | SI — Vendor cloud         |
-| SAP Newsroom      | SI — Vendor ERP           |
-| Microsoft News    | SI — Vendor               |
-| InfoQ             | GL — Engineering          |
-| The New Stack     | GL — Cloud-native         |
-| GitHub Blog       | GL — DevOps               |
-| GitLab Blog       | GL — DevSecOps            |
-| DevOps.com        | GL — Pratiques            |
-| The Register      | GL/SI — Actualité tech EN |
-| Developpez.com    | GL — Dev FR               |
-| Changelog         | GL — Releases open source |
+| 01net             | SI  Presse IT FR         |
+| Silicon.fr        | SI  Presse IT FR         |
+| Le Monde Techno   | SI  Presse IT FR         |
+| AWS News          | SI  Vendor cloud         |
+| Google Cloud Blog | SI  Vendor cloud         |
+| SAP Newsroom      | SI  Vendor ERP           |
+| Microsoft News    | SI  Vendor               |
+| InfoQ             | GL  Engineering          |
+| The New Stack     | GL  Cloud-native         |
+| GitHub Blog       | GL  DevOps               |
+| GitLab Blog       | GL  DevSecOps            |
+| DevOps.com        | GL  Pratiques            |
+| The Register      | GL/SI  Actualité tech EN |
+| Developpez.com    | GL  Dev FR               |
+| Changelog         | GL  Releases open source |
 
 ---
 
@@ -130,9 +130,9 @@ RSS Sources → Scraping → Déduplication → Pré-filtrage mots-clés (gratui
 
 ## Définitions métier
 
-**SI — Systèmes d'Information** : cloud enterprise, infrastructure IT, ERP/CRM, cybersécurité, data/BI, architecture SI, gouvernance, transformation numérique, souveraineté numérique, conformité réglementaire (NIS2, DORA, AI Act).
+**SI  Systèmes d'Information** : cloud enterprise, infrastructure IT, ERP/CRM, cybersécurité, data/BI, architecture SI, gouvernance, transformation numérique, souveraineté numérique, conformité réglementaire (NIS2, DORA, AI Act).
 
-**GL — Génie Logiciel** : DevOps, CI/CD, testing, qualité logicielle, platform engineering, conteneurs/Kubernetes, observabilité, developer experience, sécurité applicative, releases majeures de langages/outils enterprise.
+**GL  Génie Logiciel** : DevOps, CI/CD, testing, qualité logicielle, platform engineering, conteneurs/Kubernetes, observabilité, developer experience, sécurité applicative, releases majeures de langages/outils enterprise.
 
 **REJECT** : B2C (smartphones, gadgets, consoles), tutos vendor, articles anniversaire sans annonce, people news.
 
@@ -144,6 +144,6 @@ Modèle utilisé : `claude-haiku-4-5-20251001`
 
 | Scénario                      | Articles scrapés | Candidats LLM | Coût estimé |
 | ----------------------------- | ---------------- | ------------- | ----------- |
-| 3 semaines (usage typique MI) | ~200             | ~120          | ~$0.25      |
+| 1 semaines (usage typique MI) | ~100             | ~70           | ~$0.17      |
 | 1 mois                        | ~300             | ~160          | ~$0.30      |
 | Test `--no-fetch` rapide      | ~200             | ~120          | ~$0.15      |
